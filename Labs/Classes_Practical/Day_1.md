@@ -1,4 +1,4 @@
-# Finding Report — TaskBear OTP Verification
+# TaskBear OTP Verification
 
 # Vulnerability Report
 
