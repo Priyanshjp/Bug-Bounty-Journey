@@ -1,170 +1,110 @@
-# OTP Verification Bypass — Lab Report
+# Finding Report — TaskBear OTP Verification
 
-**Author:** Priyansh J Panchal  
-**Learning Track:** Bug Bounty Journey — Day 01  
-**Assessment Type:** Educational lab / authorized testing  
-**Status:** Draft template — replace all bracketed fields with observations from your own lab.
+# Vulnerability Report
 
-> **Scope and safety:** This report is for a lab or an application where you have explicit authorization. Do not test OTP bypass on real users or production accounts without written permission. Never include real OTPs, phone numbers, session cookies, access tokens, or personal data in a public repository.
+## Title
 
----
+Potential Client-Side Trust in OTP Verification Response During Sign-Up — Server-Side Impact Unconfirmed
 
-## 1. Summary
+## Summary
 
-**Title:** OTP Verification Bypass in [feature / workflow]  
-**Affected asset:** [Lab name or explicitly authorized hostname]  
-**Affected endpoint:** `[HTTP method] [redacted endpoint path]`  
-**Severity:** [Assess after validating impact and program criteria]  
-**Weakness category:** Authentication / Improper Verification of OTP  
-**CWE mapping:** Potentially CWE-287 (Improper Authentication); confirm the mapping fits the actual root cause.
+During observation of the TaskBear sign-up flow, an invalid OTP submission returned an HTTP `401 Unauthorized` response. When the response was modified locally in Burp Suite to use `201 Created` with a modified response body, the browser interface appeared to proceed through the sign-up flow.
 
-### Executive summary
+This observation may indicate that the client interface relies on response data to control the displayed verification state. However, server-side OTP verification bypass has not been established. Further validation would be required to determine whether the backend independently enforces OTP verification.
 
-During testing in an authorized lab, I evaluated the OTP verification flow for [signup / login / password reset / phone change]. The test was intended to determine whether the server correctly enforced OTP verification before completing the protected action.
+## Affected asset
 
-**Observed result:** [Describe exactly what happened. Do not claim a bypass unless the protected action succeeded without valid OTP verification.]
+- **Program:** TaskBear — authorization and program scope not yet confirmed
+- **In-scope hostname / app:** `https://taskbear.com.au/` — subject to authorization and scope confirmation
+- **Endpoint and HTTP method:** Sign-up and OTP verification flow; exact verification endpoint and HTTP method not recorded
+- **Affected role:** Unauthenticated user attempting sign-up
+- **Environment:** Web application; testing performed using Burp Suite
 
-**Security impact:** If confirmed, this weakness may allow an attacker to complete [specific protected action] without successfully proving possession of the registered factor. The actual impact depends on the workflow, account protections, and what action becomes available.
+## Severity rationale
 
----
+- **Suggested severity:** Informational / needs further validation; no confirmed vulnerability severity assigned
+- **Impact:** The browser interface appeared to proceed after local HTTP response manipulation. No server-side verification bypass, account activation, or unauthorized access has been confirmed.
+- **Exploitability / prerequisites:** The observed behaviour required interception and local modification of an HTTP response using Burp Suite. Whether an attacker can cause the server to accept an invalid OTP remains unknown.
+- **Program-specific severity guidance considered:** Not assessed. The applicable vulnerability disclosure policy, scope, and severity guidelines must be reviewed before submitting the finding.
 
-## 2. Scope and Preconditions
+## Preconditions
 
-- **Program / lab:** [Name]
-- **In-scope asset:** [Authorized hostname or lab identifier]
-- **Test date:** [YYYY-MM-DD]
-- **Account used:** [Self-controlled test account; no personal details]
-- **Environment:** [Lab / staging / authorized production program]
-- **Relevant rules reviewed:** [Yes / No]
-- **Preconditions:** [e.g., test account created; OTP flow initiated]
+- Access to the TaskBear sign-up page.
+- An email address permitted for authorized testing.
+- An OTP verification flow initiated through the application.
+- Burp Suite configured to inspect the browser's HTTP traffic.
+- Authorization to test the target under its applicable security testing policy.
 
-Do not publish confidential program details or sensitive evidence in a public repository.
+## Steps to reproduce
 
----
+1. Open the TaskBear sign-up page:  
+   `https://taskbear.com.au/auth/sign-up?redirect=%2F`
 
-## 3. Technical Details
+2. Initiate the email verification process using an authorized test email address.
 
-### Expected secure behavior
+3. Enter an invalid OTP in the verification interface.
 
-The server should validate the OTP for the correct user, purpose, and active challenge before allowing the protected action. Verification should be enforced server-side and should expire appropriately.
+4. Intercept the relevant HTTP response in Burp Suite and record the original response.
 
-### Actual behavior
+5. Observe that the original response status is `401 Unauthorized`.
 
-[Write what you observed in the lab. State whether the server accepted an invalid, expired, reused, or absent OTP, or whether the issue was only a client-side UI behavior. Do not guess.]
+6. For the recorded observation, modify the response locally to use `201 Created` and change the response body.
 
-### Root-cause hypothesis
+7. Return the modified response to the browser and observe that the interface appeared to proceed through the sign-up flow.
 
-[Only include a root-cause hypothesis supported by evidence. Possible areas to investigate include server-side verification enforcement, challenge-to-session binding, expiry, one-time use, and purpose binding.]
+8. Record the result as client-side behaviour only. Do not interpret the interface transition as proof of successful server-side OTP verification.
 
----
+**Reproduction limitation:** The exact verification endpoint, HTTP method, original request, and full response have not been documented in this report. Server-side verification and account state changes remain unverified.
 
-## 4. Reproduction Steps
+## Expected result
 
-Use only the lab or explicitly authorized target. Keep steps precise and reproducible.
+The application should reject an invalid or expired OTP and prevent verification or account activation.
 
-1. Open [lab / authorized application] and sign in with a test account if required.
-2. Navigate to [OTP-protected workflow].
-3. Initiate the OTP challenge using test data.
-4. Capture the relevant request in Burp Suite Proxy / HTTP history.
-5. Send the request to Repeater for controlled inspection.
-6. Perform the specific test demonstrated in the lab: [describe the test accurately, without real credentials or secrets].
-7. Observe the server response and whether the protected action actually completed.
-8. Repeat once in a clean test state, if safe and allowed, to confirm reproducibility.
-9. Stop testing after confirming the behavior; do not access another user's account or data.
+The backend should independently validate the OTP and maintain the authoritative verification state. A locally modified HTTP response must not allow an account to become verified or grant access to protected functionality.
 
-### Result
+## Actual result
 
-- **Expected:** [OTP verification must be required before the protected action.]
-- **Observed:** [Exact response and application behavior.]
-- **Reproducible:** [Yes / No / Not yet verified]
-- **Evidence captured:** [Sanitized screenshot / request / response]
+The original response was reported as `401 Unauthorized`. After the response was modified locally to use `201 Created` with a changed response body, the browser interface appeared to proceed.
 
-A success status code alone does not prove an OTP bypass. Confirm the protected action's result and record the relevant server-side behavior.
+No evidence currently establishes that the backend accepted the invalid OTP, activated the account, or granted access to protected resources.
 
----
+## Security impact
 
-## 5. Evidence
+The confirmed observation is limited to the browser interface responding differently after local HTTP response manipulation.
 
-Add sanitized screenshots in the `screenshots/` folder and reference them here.
+If an independently authorized test establishes that the backend accepts an invalid OTP or marks an unverified account as verified, this could represent an email verification bypass. Potential consequences would depend on the affected functionality and the application's reliance on verified email ownership.
 
-- `screenshots/01-otp-flow.png` — [What this screenshot demonstrates]
-- `screenshots/02-redacted-request.png` — [Relevant request with secrets removed]
-- `screenshots/03-redacted-response.png` — [Response and confirmed outcome]
+**Confirmed impact:** Client-side interface behaviour changed following local response modification.
 
-**Redaction checklist**
-- [ ] OTP values removed
-- [ ] Cookies and session IDs removed
-- [ ] Authorization headers / bearer tokens removed
-- [ ] Phone numbers, email addresses, and personal data removed
-- [ ] Confidential program identifiers removed if disclosure is prohibited
-- [ ] Only test-account data is shown
+**Unconfirmed impact:** Server-side OTP bypass, account activation without verification, unauthorized access, and account takeover.
 
-Never commit live secrets or raw Burp project files to a public repository.
+## Evidence
 
----
+- **Video evidence:** `evidence/otp-bypass-demo.mp4`
+- **Evidence description:** Demonstrates the OTP sign-up flow, the original `401 Unauthorized` response, and the locally modified response followed by the observed interface behaviour.
+- **Evidence limitations:** The video should not be treated as proof of server-side verification bypass.
 
-## 6. Impact Assessment
+Before publishing or submitting evidence, redact email addresses, OTP values, cookies, bearer tokens, session identifiers, and other sensitive information.
 
-Complete only what the evidence supports.
+## Remediation
 
-- **Security boundary affected:** [Authentication / account recovery / factor verification / other]
-- **Attacker prerequisites:** [What access or interaction is required]
-- **Protected action reached without valid verification:** [Specific action, if confirmed]
-- **Accounts or data exposed:** [None / describe only controlled test data]
-- **Business impact:** [Evidence-based explanation]
-- **Limitations:** [What was not tested]
+- Enforce OTP validation on the server for every verification attempt.
+- Update account verification state only after successful server-side OTP validation.
+- Do not treat HTTP response status codes or client-controlled response bodies as proof of successful verification.
+- Bind OTPs to the intended account and verification session.
+- Enforce OTP expiration, attempt limits, and replay protection.
+- Ensure protected backend endpoints independently check the account's verification status.
+- Add server-side logging and monitoring for repeated failed verification attempts.
 
-### Severity
+## Retest history
 
-**Proposed severity:** [Informational / Low / Medium / High / Critical]
+- **Date:** Not recorded
+- **Result:** Initial observation documented; server-side impact unconfirmed
+- **Notes:** No verified server-side bypass or account state change has been documented. Further testing should only occur with explicit authorization and within the permitted program scope.
 
-**Rationale:** [Explain likelihood, prerequisites, and demonstrated impact. Follow the program's severity rubric; do not assign severity based solely on the phrase “OTP bypass.”]
+## Disclosure
 
----
+This report is intended for responsible disclosure through the target's authorized security reporting channel, if one is available.
 
-## 7. Recommended Remediation
+Confirm the program's scope, permitted testing methods, evidence-handling requirements, and disclosure policy before submission. Do not publish confidential evidence or claim a confirmed vulnerability until the server-side impact has been established.
 
-1. Enforce OTP verification on the server before the protected action is performed.
-2. Bind each OTP challenge to the intended user, session, and purpose (e.g., login vs password reset).
-3. Apply a short expiry and ensure each OTP can be used only once.
-4. Apply rate limits and abuse monitoring to OTP generation and verification attempts.
-5. Invalidate or supersede older challenges where appropriate.
-6. Avoid relying on client-side flags, hidden fields, or UI state as proof of verification.
-7. Log security-relevant failures without logging OTPs, passwords, or full session secrets.
-8. Add regression tests for invalid, expired, reused, wrong-purpose, and wrong-account challenges.
-
----
-
-## 8. Retest Checklist
-
-- [ ] Correct OTP succeeds for the intended challenge.
-- [ ] Incorrect OTP is rejected server-side.
-- [ ] Expired OTP is rejected.
-- [ ] Reused OTP is rejected.
-- [ ] OTP from another account or challenge is rejected.
-- [ ] OTP for one purpose cannot authorize a different purpose.
-- [ ] Protected action remains blocked until verification succeeds.
-- [ ] Rate limits behave according to the application's policy.
-
-Only test cases permitted by the lab or program should be executed.
-
----
-
-## 9. Conclusion
-
-[Summarize whether the issue was confirmed, the exact security boundary affected, and the next action. If the lab exercise only demonstrated a theoretical or client-side behavior, say so clearly.]
-
-**Learning notes:** This exercise reinforced that OTP checks must be enforced server-side and tied to the correct account, session, challenge, and purpose.
-
----
-
-## 10. References
-
-- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
-- [OWASP Multifactor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html)
-- [PortSwigger Web Security Academy](https://portswigger.net/web-security)
-
----
-
-**Report author:** Priyansh J Panchal  
-**Repository section:** `Day_01/OTP-Verification-Bypass/`
