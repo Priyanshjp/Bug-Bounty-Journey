@@ -26,22 +26,11 @@ This behavior indicates that the registration workflow may rely on client-side r
 
 ## Steps to Reproduce (PoC)
 
-1. Navigate to the TaskBear sign-up page and enter the required registration details using an email address under your control.
-
-2. Submit a valid email verification OTP and capture the request and server response using Burp Suite Proxy. Observe the successful `HTTP/2 201 Created` response.
-
-3. Intercept an OTP verification request and replace the OTP value with a fabricated value (`123456`).
-
-4. Forward the modified request and inspect the server response. The server returns `HTTP/2 401 Unauthorized` with the message `OTP invalid or expired`.
-
-5. Modify the intercepted response in Burp Suite by replacing the `401 Unauthorized` status and error response body with the previously captured `201 Created` status and successful response body. Forward the modified response to the application.
-
-   **Observed Result:** The application proceeded to the next registration step after receiving the modified success response, despite the original OTP verification request returning `401 Unauthorized`.
-
-6. Complete the registration form with the required account details and submit it.
-
-7. Observe the resulting application state. The application displays the user dashboard and an account creation success notification.
-
+1. Open TaskBear's sign-up page and register using an email address you control.
+2. Submit an invalid OTP and capture the `401 Unauthorized` response using Burp Suite.
+3. Repeat the process with a valid OTP and capture the successful `201 Created` response.
+4. Compare both responses using Burp Suite and Meld, then modify the unsuccessful response to match the successful one.
+5. Forward the modified response, complete registration, and check whether the dashboard is accessible without valid OTP verification.
 
 ## Proof of Concept (PoC)
 
@@ -90,22 +79,17 @@ This behavior indicates that the registration workflow may rely on client-side r
 
 ## Impact
 
-- **Client-Side Verification Bypass:** Manipulating the OTP verification response allowed the registration workflow to proceed to the next step.
-- **Potential Unverified Account Creation:** The application subsequently displayed an account creation success notification and loaded the user dashboard.
-- **Email Verification Integrity:** If the backend does not independently enforce email verification, users may be able to create or access accounts without verifying ownership of their email addresses.
-- **Potential Abuse:** The weakness could undermine the application's email verification controls and allow registration using unverified email addresses.
+An attacker may potentially:
 
-**Impact Limitation:** The available evidence demonstrates client-side response manipulation and successful account creation. It does not yet establish whether the backend marked the email address as verified or whether existing accounts can be taken over.
+- Proceed through registration without completing valid email OTP verification.
+- Create accounts with unverified email addresses if backend verification is not enforced.
+- Undermine the application's email ownership verification controls.
 
 ## Remediation
 
-- **Enforce Server-Side Verification:** Validate email verification status on the backend before activating an account or granting access to protected functionality.
-- **Do Not Trust Client Responses:** Never rely on HTTP status codes or response bodies received by the client as proof that email verification succeeded.
-- **Maintain Server-Side Verification State:** Store and validate the email verification status on the server. Only update it after successful OTP validation.
-- **Protect Registration Endpoints:** Ensure account creation and activation endpoints independently enforce all required verification checks.
-- **Bind OTPs to Registration Sessions:** Associate each OTP with the intended email address and registration session.
-- **Implement OTP Expiration and Single Use:** Reject expired or previously used OTPs.
-- **Apply Rate Limiting:** Limit OTP generation and verification attempts to reduce brute-force attacks.
+1. **Server-Side Validation:** Verify OTPs on the backend before marking an email as verified.
+2. **Secure OTP Handling:** Bind OTPs to the correct email and registration session, enforce expiration, and limit attempts.
+3. **Registration Enforcement:** Prevent account activation or protected access until server-side email verification succeeds.
 
 ### Expected Security Outcome
 
