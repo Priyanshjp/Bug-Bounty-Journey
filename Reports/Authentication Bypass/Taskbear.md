@@ -90,7 +90,3 @@ An attacker may potentially:
 1. **Server-Side Validation:** Verify OTPs on the backend before marking an email as verified.
 2. **Secure OTP Handling:** Bind OTPs to the correct email and registration session, enforce expiration, and limit attempts.
 3. **Registration Enforcement:** Prevent account activation or protected access until server-side email verification succeeds.
-
-### Expected Security Outcome
-
-The registration workflow must not treat a manually modified client-side response as successful email verification. Account activation and access to protected features must depend on verification enforced by the backend.
